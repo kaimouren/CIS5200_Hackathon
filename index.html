@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The MJRTY Effect — A Model of Structural Bias in Online Ratings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f0f0f; --bg2: #181818; --bg3: #242424;
+      --text: #f0ede6; --text2: #9a9690; --text3: #555;
+      --teal: #1D9E75; --coral: #D85A30; --red: #E24B4A;
+      --border: rgba(255,255,255,0.08);
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 15px; line-height: 1.7; }
+    .container { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+    header { padding: 80px 0 56px; border-bottom: 1px solid var(--border); margin-bottom: 64px; }
+    .eyebrow { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 16px; }
+    h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 40px; font-weight: 600; line-height: 1.15; margin-bottom: 20px; }
+    .thesis { font-size: 15px; color: var(--text2); line-height: 1.75; border-left: 3px solid var(--coral); padding-left: 16px; }
+    section { margin-bottom: 72px; }
+    .section-number { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
+    h2 { font-family: 'Playfair Display', Georgia, serif; font-size: 26px; font-weight: 600; margin-bottom: 10px; }
+    .section-desc { color: var(--text2); font-size: 14px; margin-bottom: 28px; max-width: 620px; line-height: 1.7; }
+    .slider-row { display: flex; align-items: center; gap: 14px; margin-bottom: 6px; }
+    .slider-label { font-size: 13px; color: var(--text2); min-width: 170px; }
+    input[type="range"] { flex: 1; -webkit-appearance: none; height: 3px; background: var(--bg3); border-radius: 2px; outline: none; cursor: pointer; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--text); cursor: pointer; }
+    .slider-value { font-size: 14px; font-weight: 500; min-width: 44px; text-align: right; }
+    .slider-hint { font-size: 11px; color: var(--text3); margin-bottom: 28px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px; }
+    .stat-card { background: var(--bg2); border-radius: 8px; padding: 14px 16px; border: 1px solid var(--border); }
+    .stat-label { font-size: 11px; color: var(--text3); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-value { font-size: 20px; font-weight: 500; }
+    .demo-grid { display: grid; grid-template-columns: 1fr 60px 1fr; align-items: center; margin-bottom: 28px; }
+    .demo-panel { background: var(--bg2); border-radius: 8px; padding: 16px; border: 1px solid var(--border); }
+    .demo-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 12px; }
+    .demo-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .demo-bar-label { font-size: 11px; color: var(--text2); min-width: 72px; }
+    .demo-bar-outer { flex: 1; height: 7px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+    .demo-bar-inner { height: 100%; border-radius: 4px; transition: width 0.35s ease; }
+    .demo-bar-pct { font-size: 11px; color: var(--text3); min-width: 32px; text-align: right; }
+    .arrow-col { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+    .arrow-col span { font-size: 11px; color: var(--text3); text-align: center; line-height: 1.4; }
+    .legend { display: flex; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+    .chart-wrap { position: relative; width: 100%; margin-bottom: 28px; }
+    .mjrty-section { background: var(--bg2); border-radius: 8px; padding: 20px; border: 1px solid var(--border); }
+    .mjrty-row { margin-bottom: 14px; }
+    .mjrty-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+    .mjrty-bar-outer { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--bg3); }
+    .pipeline { display: flex; align-items: stretch; margin: 24px 0; }
+    .pipeline-box { flex: 1; background: var(--bg2); border: 1px solid var(--border); padding: 16px; }
+    .pipeline-box:first-child { border-radius: 8px 0 0 8px; }
+    .pipeline-box:last-child  { border-radius: 0 8px 8px 0; border-left: none; }
+    .pipeline-arrow { display: flex; align-items: center; justify-content: center; padding: 0 6px; color: var(--text3); font-size: 18px; flex-shrink: 0; }
+    .pipeline-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 10px; }
+    .pipeline-items { list-style: none; }
+    .pipeline-items li { font-size: 12px; color: var(--text2); padding: 3px 0; border-bottom: 1px solid var(--border); line-height: 1.5; }
+    .pipeline-items li:last-child { border-bottom: none; }
+    .pipeline-number { font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 600; color: var(--text); line-height: 1; margin-bottom: 4px; }
+    .pipeline-sublabel { font-size: 11px; color: var(--text3); }
+    .borges-quote { border-left: 3px solid var(--text3); padding-left: 16px; margin: 24px 0; }
+    .borges-quote p { font-size: 14px; color: var(--text2); font-style: italic; line-height: 1.7; margin-bottom: 6px; }
+    .borges-quote cite { font-size: 12px; color: var(--text3); font-style: normal; }
+    .conclusion-box { background: var(--bg2); border-radius: 8px; padding: 28px; border: 1px solid var(--border); }
+    .conclusion-box p { color: var(--text2); font-size: 14px; margin-bottom: 14px; line-height: 1.75; }
+    .claim-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
+    .claim-box { padding: 16px; border-radius: 6px; }
+    .claim-box.claimed { background: rgba(29,158,117,0.08); border: 1px solid rgba(29,158,117,0.25); }
+    .claim-box.actual  { background: rgba(226,75,74,0.08);  border: 1px solid rgba(226,75,74,0.25); }
+    .claim-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; font-weight: 500; }
+    .claim-box.claimed .claim-title { color: var(--teal); }
+    .claim-box.actual  .claim-title { color: var(--red); }
+    .claim-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+    .course-note { margin-top: 18px; font-size: 12px; color: var(--text3); border-top: 1px solid var(--border); padding-top: 14px; }
+    hr.divider { border: none; border-top: 1px solid var(--border); margin: 64px 0; }
+    footer { border-top: 1px solid var(--border); padding: 28px 0 48px; color: var(--text3); font-size: 12px; line-height: 1.7; }
+    @media (max-width: 580px) {
+      h1 { font-size: 26px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .demo-grid { grid-template-columns: 1fr; }
+      .claim-row { grid-template-columns: 1fr; }
+      .arrow-col { display: none; }
+      .pipeline { flex-direction: column; }
+      .pipeline-box:first-child { border-radius: 8px 8px 0 0; }
+      .pipeline-box:last-child  { border-radius: 0 0 8px 8px; border-left: 1px solid var(--border); border-top: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <p class="eyebrow">CIS 5020 · Critical Analysis of Algorithms · Final Hackathon · Spring 2026</p>
+    <h1>The MJRTY Effect</h1>
+    <p class="thesis">
+      We do not claim that Yelp's system is biased.
+      Instead, we demonstrate how a seemingly reasonable filtering and aggregation pipeline
+      can produce systematic bias under certain conditions.
+      Using a model inspired by the Boyer–Moore majority vote algorithm,
+      we show how minority signals can be gradually suppressed, compounded over time,
+      and transformed into ratings that appear objective — but reflect structure, not quality.
+    </p>
+  </header>
+
+  <!-- Section 1 -->
+  <section>
+    <p class="section-number">Section 01</p>
+    <h2>The Elite Filter Creates a Majority</h2>
+    <p class="section-desc">
+      Many platforms give higher weight to "power users" — those with many reviews, friends, and activity.
+      In this model, we ask: <em>if</em> those users have correlated preferences toward certain cuisines,
+      what happens to the reviewer pool as the filter grows stricter?
+      Adjust the slider to explore how the pool composition shifts under this assumption.
+    </p>
+    <div class="slider-row">
+      <span class="slider-label">Elite filter strictness</span>
+      <input type="range" min="0" max="100" value="65" step="1" id="eliteSlider">
+      <span class="slider-value" id="eliteOut">65%</span>
+    </div>
+    <p class="slider-hint">0% = all reviews counted equally &nbsp;·&nbsp; 100% = only Elite reviews count</p>
+    <div class="demo-grid">
+      <div class="demo-panel" id="beforePanel"></div>
+      <div class="arrow-col">
+        <span>Elite<br>filter</span>
+        <span style="font-size:18px;color:var(--coral);">→</span>
+        <span id="arrowPct" style="color:var(--coral);font-size:10px;"></span>
+      </div>
+      <div class="demo-panel" id="afterPanel"></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <p class="stat-label">Majority in pool</p>
+        <p class="stat-value" id="majorityPctDisplay" style="color:var(--coral);">—</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Reviews removed</p>
+        <p class="stat-value" id="filteredPctDisplay">—</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Majority skew</p>
+        <p class="stat-value" id="skewDisplay" style="color:var(--teal);">—</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 2 -->
+  <section>
+    <p class="section-number">Section 02</p>
+    <h2>A MJRTY-Like Cancellation Effect</h2>
+    <p class="section-desc">
+      In streaming algorithms like Boyer-Moore MJRTY, minority elements are cancelled one-for-one
+      by a dominant majority until they disappear from the result.
+      Our question: can a similar dynamic emerge in rating aggregation?
+      In this model, if majority reviewers score minority cuisines lower,
+      their dominance in the pool produces a cancellation effect.
+      Every restaurant below has the same true quality: <strong style="color:var(--text);">4.0★</strong>.
+      This is not how any specific platform explicitly works —
+      it illustrates a class of aggregation dynamics worth examining.
+    </p>
+    <div class="legend">
+      <span class="legend-item"><span class="legend-dot" style="background:rgba(136,135,128,0.35);border:1px solid rgba(136,135,128,0.5);"></span>True quality (4.0★)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#1D9E75;"></span>Majority-favored</span>
+      <span class="legend-item"><span class="legend-dot" style="background:#D85A30;"></span>Minority cuisine</span>
+    </div>
+    <div class="chart-wrap" style="height:250px;">
+      <canvas id="ratingsChart" role="img" aria-label="Grouped bar chart comparing true quality versus aggregate rating for six cuisines.">All cuisines have identical true quality of 4.0 stars.</canvas>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <p class="stat-label">Top rated</p>
+        <p class="stat-value" style="font-size:15px;color:var(--teal);" id="topRated">—</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Most suppressed</p>
+        <p class="stat-value" style="font-size:15px;color:var(--red);" id="mostSuppressed">—</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Rating gap</p>
+        <p class="stat-value" id="ratingGap">—</p>
+      </div>
+    </div>
+    <div class="mjrty-section">
+      <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:4px;">Cancellation signal — minority cuisines (in this model)</p>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:16px;">Green = signal preserved &nbsp;·&nbsp; Red = cancelled by majority votes</p>
+      <div id="mjrtyViz"></div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 3 -->
+  <section>
+    <p class="section-number">Section 03</p>
+    <h2>The Spiral: Bias Compounds Without Correction</h2>
+    <p class="section-desc">
+      The effect in Section 02 does not stay constant — under this model's assumptions, it compounds.
+      Lower ratings reduce visibility, which reduces reviews from minority diners,
+      which skews the pool further, which lowers ratings further still.
+      No single step is malicious. The system only needs to be uncorrected.
+      This is the core risk of streaming aggregation without a fairness constraint.
+    </p>
+
+    <div class="legend" id="spiralLegend"></div>
+    <div class="chart-wrap" style="height:280px;">
+      <canvas id="spiralChart" role="img" aria-label="Line chart showing cuisine ratings over multiple rounds. Minority cuisine ratings decline while majority ratings stay stable.">Minority cuisine ratings decline over successive rounds.</canvas>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <p class="stat-label">Majority % at round <span id="roundLabel">1</span></p>
+        <p class="stat-value" id="spiralMajPct" style="color:var(--coral);">—</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Gap growth vs. round 0</p>
+        <p class="stat-value" id="spiralGapDelta" style="color:var(--red);">—</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Worst-off cuisine</p>
+        <p class="stat-value" style="font-size:14px;" id="spiralWorst">—</p>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border-radius:8px;padding:18px 20px;border:1px solid rgba(226,75,74,0.2);">
+      <p style="font-size:15px;font-weight:500;color:var(--text);margin-bottom:8px;">The algorithm does not need to be malicious. It only needs to be uncorrected.</p>
+      <p style="font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:0;">
+        Try a modest filter (40–50%) and observe how the gap grows over rounds.
+        The unfairness does not require any single bad design decision —
+        it emerges from the interaction of individually reasonable components:
+        a quality filter, a weighted average, a ranking function.
+        Without an explicit correction mechanism, the structure does the rest.
+      </p>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 4 -->
+  <section>
+    <p class="section-number">Section 04</p>
+    <h2>Legitimacy Laundering: Structure Becomes a Number</h2>
+    <p class="section-desc">
+      The final and most powerful step is the conversion.
+      All the structural inputs — pool skew, affinity differentials, feedback dynamics —
+      are compressed into a single number.
+      That number circulates as objective truth, with the pipeline that produced it invisible.
+      Adjust Section 01's slider and watch the number update.
+    </p>
+    <div class="pipeline">
+      <div class="pipeline-box">
+        <p class="pipeline-label">Messy inputs</p>
+        <ul class="pipeline-items">
+          <li>Demographic skew in Elite pool</li>
+          <li>Majority affinity bonuses</li>
+          <li>Minority cuisine penalties</li>
+          <li>Feedback loops over time</li>
+          <li>Who counts as "quality" reviewer</li>
+          <li>Historical underrepresentation</li>
+        </ul>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-box" style="flex:0.6;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+        <p class="pipeline-label">Algorithm</p>
+        <p style="font-size:12px;color:var(--text3);line-height:1.7;">Elite filter<br>+ weighted average<br>+ MJRTY logic<br>+ ranking</p>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-box" style="flex:0.55;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;">
+        <p class="pipeline-label">Output (most suppressed cuisine)</p>
+        <p class="pipeline-number" id="launderNumber">—</p>
+        <p class="pipeline-sublabel">Looks objective.<br>Circulates as truth.</p>
+      </div>
+    </div>
+    <div class="borges-quote">
+      <p>"The Company's orders do not differ from those lavished by impostors."</p>
+      <cite>— Jorge Luis Borges, <em>The Lottery in Babylon</em></cite>
+    </div>
+    <div style="background:var(--bg2);border-radius:8px;padding:18px 20px;border:1px solid var(--border);">
+      <p style="font-size:13px;color:var(--text2);line-height:1.75;">
+        In Borges' story, the Lottery begins as a simple game and gradually takes over all of civic life —
+        each step individually justifiable, the final state indistinguishable from chaos,
+        yet defended as legitimate process.
+        Rating systems can follow a similar arc: quality filtering is reasonable,
+        weighted averaging is reasonable, ranking is reasonable.
+        But a chain of reasonable steps can produce a structurally biased outcome —
+        and the output number hides the chain entirely.
+        The star rating <em>looks</em> like it came from quality. Under these conditions, it came from structure.
+      </p>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Section 5 -->
+  <section>
+    <p class="section-number">Section 05</p>
+    <h2>What This Model Shows</h2>
+    <div class="conclusion-box">
+      <p>
+        This simulation illustrates how unfairness can emerge —
+        not from any single malicious design decision,
+        but from the interaction of reasonable components:
+        a quality filter, a preference-weighted aggregate, a feedback loop, a number.
+        The concern is not a specific platform. It is a general pattern:
+        <em>filter → aggregation → feedback → compression.</em>
+      </p>
+      <p>
+        In this model, restaurants don't rank lower because they are worse.
+        They rank lower because their advocates were filtered out,
+        their positive signals cancelled, the gap compounded without correction,
+        and a decimal was placed over the result to make it look clean.
+        Whether any real system exhibits this pattern is an empirical question —
+        and one worth asking.
+      </p>
+      <div class="claim-row">
+        <div class="claim-box claimed">
+          <p class="claim-title">What systems like this claim</p>
+          <p class="claim-text">
+            Objective rules applied equally to all.
+            Quality signals surface the best results.
+            The number reflects reality.
+          </p>
+        </div>
+        <div class="claim-box actual">
+          <p class="claim-title">What this model reveals</p>
+          <p class="claim-text">
+            Under correlated-preference conditions, quality filtering concentrates weight in a majority pool.
+            Aggregation then cancels minority signals.
+            Feedback compounds the gap.
+            The output number buries all three steps.
+          </p>
+        </div>
+      </div>
+      <p class="course-note">
+        <strong style="color:var(--text2);">CIS 5020 connections:</strong>
+        Boyer-Moore MJRTY streaming majority (Lectures 9–10) ·
+        Online matching fairness &amp; the APB scandal (Lectures 22–23) ·
+        Algorithmic legitimacy vs. chaos — Borges' Lottery in Babylon (Lecture 24)
+        <br><br>
+        <strong style="color:var(--text2);">Motivated by:</strong>
+        Yelp's Elite user filtering system and published fairness research (Duma et al., ICWSM 2025)
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <p>CIS 5020: Critical Analysis of Algorithms · University of Pennsylvania · Spring 2026</p>
+    <p style="margin-top:4px;">This is a conceptual simulation, not an empirical claim about any specific platform. All parameters are illustrative. The model is designed to demonstrate a structural risk, not to prove that any system currently exhibits it.</p>
+  </footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const GROUPS = [
+  { name: 'American/Italian fans', isMaj: true,  allPct: 0.30, elitePct: 0.52, color: '#1D9E75' },
+  { name: 'General diners',        isMaj: true,  allPct: 0.20, elitePct: 0.18, color: '#5DCAA5' },
+  { name: 'Chinese food fans',     isMaj: false, allPct: 0.16, elitePct: 0.09, color: '#D85A30' },
+  { name: 'Vietnamese food fans',  isMaj: false, allPct: 0.14, elitePct: 0.08, color: '#E24B4A' },
+  { name: 'Ethiopian food fans',   isMaj: false, allPct: 0.12, elitePct: 0.07, color: '#BA7517' },
+  { name: 'Mexican food fans',     isMaj: false, allPct: 0.08, elitePct: 0.06, color: '#7F77DD' },
+];
+const CUISINES = [
+  { name: 'American',   isMaj: true,  color: '#1D9E75', minScale: 1.00 },
+  { name: 'Italian',    isMaj: true,  color: '#5DCAA5', minScale: 1.00 },
+  { name: 'Chinese',    isMaj: false, color: '#D85A30', minScale: 1.30 },
+  { name: 'Vietnamese', isMaj: false, color: '#E24B4A', minScale: 1.00 },
+  { name: 'Ethiopian',  isMaj: false, color: '#BA7517', minScale: 0.65 },
+  { name: 'Mexican',    isMaj: false, color: '#7F77DD', minScale: 0.85 },
+];
+const TRUE_Q = 4.0, MAJ_AFF = 0.50, MAJ_PEN = -0.42, MIN_AFF = 0.85, N_MIN = 4, FEEDBACK = 0.045;
+
+function getMajPct(s) {
+  const a = GROUPS.filter(g => g.isMaj).reduce((x, g) => x + g.allPct,   0);
+  const e = GROUPS.filter(g => g.isMaj).reduce((x, g) => x + g.elitePct, 0);
+  return a + (s / 100) * (e - a);
+}
+function computeRatings(majPct) {
+  const minE = (1 - majPct) / N_MIN;
+  return CUISINES.map(c => {
+    const effectiveMin = minE * (c.minScale || 1.0);
+    const agg = c.isMaj
+      ? majPct * (TRUE_Q + MAJ_AFF) + (1 - majPct) * TRUE_Q
+      : majPct * (TRUE_Q + MAJ_PEN) + effectiveMin * (TRUE_Q + MIN_AFF) + (1 - majPct - effectiveMin) * TRUE_Q;
+    const r = Math.round(agg * 100) / 100;
+    return { ...c, agg: r, suppression: Math.round((TRUE_Q - r) * 100) / 100 };
+  });
+}
+function computeSpiral(s, maxR) {
+  let m = getMajPct(s);
+  const hist = { majPcts: [], ratings: {} };
+  CUISINES.forEach(c => hist.ratings[c.name] = []);
+  for (let t = 0; t <= maxR; t++) {
+    const r = computeRatings(m);
+    hist.majPcts.push(m);
+    r.forEach(x => hist.ratings[x.name].push(x.agg));
+    const avgMin = r.filter(x => !x.isMaj).reduce((a, x) => a + x.agg, 0) / N_MIN;
+    const avgMaj = r.filter(x =>  x.isMaj).reduce((a, x) => a + x.agg, 0) / 2;
+    m = Math.min(0.93, m + (avgMaj - avgMin) * FEEDBACK);
+  }
+  return hist;
+}
+function getGroupPcts(s) {
+  return GROUPS.map(g => ({ ...g, pct: Math.round((g.allPct + (s / 100) * (g.elitePct - g.allPct)) * 100) }));
+}
+
+const barChart = new Chart(document.getElementById('ratingsChart'), {
+  type: 'bar',
+  data: {
+    labels: CUISINES.map(c => c.name),
+    datasets: [
+      { label: 'True quality', data: CUISINES.map(() => TRUE_Q),
+        backgroundColor: 'rgba(136,135,128,0.18)', borderColor: 'rgba(136,135,128,0.4)', borderWidth: 1 },
+      { label: 'Aggregate rating', data: [], backgroundColor: [], borderWidth: 0, borderRadius: 4 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+      tooltip: { backgroundColor: '#1a1a1a', titleColor: '#f0ede6', bodyColor: '#9a9690',
+        callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + '★' } } },
+    scales: {
+      y: { min: 2.8, max: 4.8, ticks: { color: '#555', callback: v => v.toFixed(1) + '★', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+      x: { ticks: { color: '#9a9690', font: { size: 11 } }, grid: { display: false } }
+    }
+  }
+});
+
+const spiralChart = new Chart(document.getElementById('spiralChart'), {
+  type: 'line',
+  data: { labels: [], datasets: [] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+      tooltip: { backgroundColor: '#1a1a1a', titleColor: '#f0ede6', bodyColor: '#9a9690',
+        callbacks: { title: i => 'Round ' + i[0].label, label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(2) + '★' } } },
+    scales: {
+      y: { min: 2.5, max: 4.8, ticks: { color: '#555', callback: v => v.toFixed(1) + '★', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+      x: { title: { display: true, text: 'Round', color: '#555', font: { size: 11 } }, ticks: { color: '#9a9690', font: { size: 11 } }, grid: { display: false } }
+    }
+  }
+});
+
+const legendEl = document.getElementById('spiralLegend');
+CUISINES.forEach(c => {
+  const el = document.createElement('span');
+  el.className = 'legend-item';
+  el.innerHTML = `<span class="legend-dot" style="background:${c.color};"></span>${c.name}`;
+  legendEl.appendChild(el);
+});
+
+function renderPanel(id, title, groups) {
+  document.getElementById(id).innerHTML = `<p class="demo-title">${title}</p>` +
+    groups.map(g => `<div class="demo-bar-row">
+      <span class="demo-bar-label">${g.name.split(' ')[0]}</span>
+      <div class="demo-bar-outer"><div class="demo-bar-inner" style="width:${g.pct}%;background:${g.color};"></div></div>
+      <span class="demo-bar-pct">${g.pct}%</span>
+    </div>`).join('');
+}
+
+function renderMJRTY(ratings) {
+  document.getElementById('mjrtyViz').innerHTML = ratings.filter(r => !r.isMaj).map(r => {
+    const c = Math.max(0, Math.round((r.suppression / TRUE_Q) * 100));
+    return `<div class="mjrty-row">
+      <div class="mjrty-header">
+        <span style="color:#f0ede6;">${r.name}</span>
+        <span style="color:${r.suppression > 0 ? '#E24B4A' : '#1D9E75'};">
+          ${r.suppression > 0 ? '−' + r.suppression.toFixed(2) + '★ cancelled' : 'no suppression'}
+        </span>
+      </div>
+      <div class="mjrty-bar-outer">
+        <div style="width:${100 - c}%;background:#1D9E75;transition:width 0.3s ease;"></div>
+        <div style="width:${c}%;background:#E24B4A;transition:width 0.3s ease;"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function update() {
+  const s = +document.getElementById('eliteSlider').value;
+  const rounds = 10;
+  const majPct = getMajPct(s);
+  const ratings = computeRatings(majPct);
+
+  renderPanel('beforePanel', 'All reviewers (unfiltered)', getGroupPcts(0));
+  renderPanel('afterPanel',  'After Elite filter',         getGroupPcts(s));
+  document.getElementById('eliteOut').textContent           = s + '%';
+  document.getElementById('majorityPctDisplay').textContent = Math.round(majPct * 100) + '%';
+  document.getElementById('filteredPctDisplay').textContent = Math.round(s * 0.55) + '% removed';
+  document.getElementById('skewDisplay').textContent        = '+' + Math.round((majPct - 0.50) * 100) + 'pp';
+  document.getElementById('arrowPct').textContent           = Math.round(s * 0.55) + '% out';
+
+  barChart.data.datasets[1].data            = ratings.map(r => r.agg);
+  barChart.data.datasets[1].backgroundColor = ratings.map(r => r.isMaj ? '#1D9E75' : '#D85A30');
+  barChart.update('active');
+
+  const minR = ratings.filter(r => !r.isMaj);
+  const top  = [...ratings].sort((a, b) => b.agg - a.agg)[0];
+  const bot  = [...minR].sort((a, b) => a.agg - b.agg)[0];
+  document.getElementById('topRated').textContent       = top.name + ' ' + top.agg.toFixed(2) + '★';
+  document.getElementById('mostSuppressed').textContent = bot.name + ' ' + bot.agg.toFixed(2) + '★';
+  document.getElementById('ratingGap').textContent      = (Math.round((top.agg - bot.agg) * 100) / 100).toFixed(2) + ' stars';
+  renderMJRTY(ratings);
+
+  // Spiral
+  const hist = computeSpiral(s, rounds);
+  document.getElementById('roundLabel').textContent = rounds;
+  spiralChart.data.labels   = Array.from({ length: rounds + 1 }, (_, i) => i);
+  spiralChart.data.datasets = CUISINES.map(c => ({
+    label: c.name, data: hist.ratings[c.name],
+    borderColor: c.color, backgroundColor: 'transparent',
+    borderWidth: c.isMaj ? 2 : 1.5, pointRadius: 2, tension: 0.3
+  }));
+  spiralChart.update('active');
+
+  const finalMaj   = hist.majPcts[rounds];
+  const initRatings  = computeRatings(hist.majPcts[0]);
+  const finalRatings = computeRatings(finalMaj);
+  const initGap  = Math.max(...initRatings.filter(r => r.isMaj).map(r => r.agg))  - Math.min(...initRatings.filter(r => !r.isMaj).map(r => r.agg));
+  const finalGap = Math.max(...finalRatings.filter(r => r.isMaj).map(r => r.agg)) - Math.min(...finalRatings.filter(r => !r.isMaj).map(r => r.agg));
+  const worst    = [...finalRatings].filter(r => !r.isMaj).sort((a, b) => a.agg - b.agg)[0];
+
+  document.getElementById('spiralMajPct').textContent    = Math.round(finalMaj * 100) + '%';
+  document.getElementById('spiralGapDelta').textContent  = '+' + (Math.round((finalGap - initGap) * 100) / 100).toFixed(2) + '★';
+  document.getElementById('spiralWorst').textContent     = worst.name + ' ' + worst.agg.toFixed(2) + '★';
+  document.getElementById('launderNumber').textContent   = worst.agg.toFixed(1) + '★';
+}
+
+
+document.getElementById('eliteSlider').addEventListener('input', update);
+update();
+</script>
+</body>
+</html>
