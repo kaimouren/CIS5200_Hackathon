@@ -2,7 +2,7 @@
 
 **CIS 5020: Critical Analysis of Algorithms · Final Hackathon · Spring 2026 · University of Pennsylvania**
 
-🔗 **[Live demo](https://your-username.github.io/mjrty-yelp/)** ← replace with your GitHub Pages URL
+🔗 **[Live demo]([https://your-username.github.io/mjrty-yelp/](https://kaimouren.github.io/CIS5200_Hackathon/))** ← replace with your GitHub Pages URL
 
 ---
 
